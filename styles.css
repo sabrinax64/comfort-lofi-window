@@ -9,14 +9,16 @@
 :root {
   --wall: #7e97c5;
   --wall-light: #92a9cb;
+  --wall-deep: #3d4f6e;
   --frame: #6a7ca7;
-  --frame-dark: #41454b;
-  --frame-highlight: #8b6b52;
-  --sill: #5c4332;
-  --text: #f5ebe0;
-  --text-muted: #c9b8a8;
+  --frame-dark: #4a5d85;
+  --frame-highlight: #a8b8d4;
+  --sill: #858dae;
+  --sill-deep: #5a6488;
+  --text: #ffffff;
+  --text-muted: #c5cfe8;
   --accent: #b3c8db;
-  --glow: rgba(155, 140, 255, 0.15);
+  --glow: rgba(179, 200, 219, 0.25);
 }
 
 html,
@@ -27,7 +29,7 @@ body {
 
 body {
   font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  background: radial-gradient(ellipse 120% 80% at 50% 0%, var(--wall-light) 0%, var(--wall) 55%, #2a231c 100%);
+  background: radial-gradient(ellipse 120% 80% at 50% 0%, var(--wall-light) 0%, var(--wall) 55%, var(--wall-deep) 100%);
   color: var(--text);
   display: flex;
   align-items: center;
@@ -214,7 +216,7 @@ body {
   left: -8px;
   right: -8px;
   height: 40px;
-  background: linear-gradient(180deg, var(--sill), #3d2d22);
+  background: linear-gradient(180deg, var(--sill), var(--sill-deep));
   border-radius: 0 0 6px 6px;
   z-index: 12;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
@@ -240,7 +242,7 @@ body {
   transform: translateX(-50%);
   width: 20px;
   height: 12px;
-  background: #8b5a3c;
+  background: #5a6488;
   border-radius: 2px;
 }
 
@@ -274,9 +276,9 @@ body {
   flex-direction: column;
   gap: 1.1rem;
   padding: 1rem 1.1rem;
-  background: rgba(0, 0, 0, 0.22);
+  background: rgba(61, 79, 110, 0.45);
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(179, 200, 219, 0.12);
   min-width: 180px;
 }
 
@@ -341,7 +343,7 @@ input[type="range"] {
 
 .sound-btn[aria-pressed="true"] {
   border-color: var(--accent);
-  background: rgba(232, 168, 124, 0.15);
+  background: rgba(179, 200, 219, 0.18);
   box-shadow: 0 0 20px var(--glow);
 }
 
