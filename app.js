@@ -6,6 +6,7 @@
 const CYCLE_SECONDS = 120;
 const NIGHT_OVERLAY_MAX = 0.65;
 const SCENE_BRIGHTNESS_MIN = 0.5;
+const LOFI_GAIN_MAX = 0.55;
 
 const MOODS = {
   calm: { rainBias: 0.7, filterWarmth: 0.5 },
@@ -22,7 +23,9 @@ const ambientEl = document.getElementById("ambient");
 const moodSelect = document.getElementById("mood");
 const rainSlider = document.getElementById("rain-slider");
 const worldClock = document.getElementById("world-clock");
-const soundToggle = document.getElementById("sound-toggle");
+const rainSoundToggle = document.getElementById("rain-sound-toggle");
+const lofiToggle = document.getElementById("lofi-toggle");
+const lofiVolumeSlider = document.getElementById("lofi-volume");
 
 const rainCtx = rainCanvas.getContext("2d");
 
@@ -35,7 +38,9 @@ let mood = "calm";
 let lastFrame = 0;
 let raindrops = [];
 let audio = null;
-let soundOn = false;
+let rainSoundOn = false;
+let lofiOn = false;
+let lofiVolume = 0.7;
 let sceneMoodFilter = "";
 
 // ——— Resize ———
@@ -63,6 +68,12 @@ function dayPhase(t) {
 
 function lerp(a, b, t) {
   return a + (b - a) * t;
+}
+
+function setOutsideTime(hours24, minutes = 0) {
+  cycleT = ((hours24 % 24) + minutes / 60) / 24;
+  updateDayNightOverlay(cycleT);
+  updateClock(cycleT);
 }
 
 function applySceneMood(moodKey) {
@@ -148,11 +159,12 @@ function drawRain(dt) {
   }
 }
 
-// ——— Ambient audio (lofi loop + rain hiss) ———
+// ——— Ambient audio (lofi + rain hiss, separate buses) ———
 class ComfortAudio {
   constructor() {
     this.ctx = null;
     this.master = null;
+    this.lofiGain = null;
     this.mediaSource = null;
     this.rainNoise = null;
     this.rainGain = null;
@@ -167,14 +179,18 @@ class ComfortAudio {
     }
     this.ctx = new AudioContext();
     this.master = this.ctx.createGain();
-    this.master.gain.value = 0;
+    this.master.gain.value = 1;
     this.master.connect(this.ctx.destination);
+
+    this.lofiGain = this.ctx.createGain();
+    this.lofiGain.gain.value = 0;
+    this.lofiGain.connect(this.master);
 
     this._ambientOk = !ambientEl.error;
     if (this._ambientOk) {
       try {
         this.mediaSource = this.ctx.createMediaElementSource(ambientEl);
-        this.mediaSource.connect(this.master);
+        this.mediaSource.connect(this.lofiGain);
       } catch (e) {
         this._ambientOk = false;
         console.warn("Comfort Tab: could not connect ambient audio", e);
@@ -217,35 +233,26 @@ class ComfortAudio {
     if (!ambientEl.paused) ambientEl.pause();
   }
 
-  setRain(amount) {
+  setLofi(on, volume01) {
+    if (!this.lofiGain) return;
+    const g = on ? volume01 * LOFI_GAIN_MAX : 0;
+    this.lofiGain.gain.setTargetAtTime(g, this.ctx.currentTime, on ? 0.8 : 0.4);
+    if (on) this.playAmbient();
+    else this.pauseAmbient();
+  }
+
+  setRainLevel(amount) {
     if (this.rainGain) {
       this.rainGain.gain.setTargetAtTime(amount * 0.08, this.ctx.currentTime, 0.3);
     }
   }
 
-  fadeIn() {
-    if (this.master) {
-      this.master.gain.setTargetAtTime(0.55, this.ctx.currentTime, 1.5);
-    }
-    this.playAmbient();
-  }
-
-  fadeOut() {
-    if (this.master) {
-      this.master.gain.setTargetAtTime(0, this.ctx.currentTime, 0.8);
-    }
-    this.pauseAmbient();
-  }
-
-  stop() {
-    this.pauseAmbient();
-    if (this.ctx) {
-      setTimeout(() => {
-        this.ctx?.close();
-        this.ctx = null;
-        this.mediaSource = null;
-        this._started = false;
-      }, 900);
+  setRainOn(on) {
+    if (!this.rainGain) return;
+    if (on) {
+      this.setRainLevel(rainIntensity);
+    } else {
+      this.rainGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.4);
     }
   }
 }
@@ -259,6 +266,18 @@ function updateClock(t) {
   worldClock.textContent = `${h12}:${mins.toString().padStart(2, "0")} ${ampm}`;
 }
 
+function syncRainAudio() {
+  if (audio && rainSoundOn) {
+    audio.setRainLevel(rainIntensity);
+  }
+}
+
+function syncLofiAudio() {
+  if (audio && lofiOn) {
+    audio.setLofi(true, lofiVolume);
+  }
+}
+
 // ——— Main loop ———
 function frame(now) {
   if (!lastFrame) lastFrame = now;
@@ -270,10 +289,6 @@ function frame(now) {
   updateDayNightOverlay(cycleT);
   drawRain(dt);
 
-  if (audio && soundOn) {
-    audio.setRain(rainIntensity);
-  }
-
   updateClock(cycleT);
   requestAnimationFrame(frame);
 }
@@ -282,6 +297,9 @@ function frame(now) {
 moodSelect.addEventListener("change", () => {
   mood = moodSelect.value;
   applySceneMood(mood);
+  if (mood === "dreamy") setOutsideTime(22, 0);
+  else if (mood === "bright") setOutsideTime(10, 0);
+
   const m = MOODS[mood];
   if (m && rainSlider) {
     const target = Math.round(lerp(rainSlider.value / 100, m.rainBias, 0.35) * 100);
@@ -296,28 +314,49 @@ function onRainChange() {
   const targetCount = Math.floor(180 * rainIntensity);
   while (raindrops.length < targetCount) raindrops.push(makeDrop());
   raindrops.length = targetCount;
-  if (audio) audio.setRain(rainIntensity);
+  syncRainAudio();
 }
 
 rainSlider.addEventListener("input", onRainChange);
 
-soundToggle.addEventListener("click", async () => {
-  soundOn = !soundOn;
-  soundToggle.setAttribute("aria-pressed", String(soundOn));
-  soundToggle.querySelector(".sound-label").textContent = soundOn ? "Sound on" : "Sound off";
+rainSoundToggle.addEventListener("click", async () => {
+  rainSoundOn = !rainSoundOn;
+  rainSoundToggle.setAttribute("aria-pressed", String(rainSoundOn));
+  rainSoundToggle.querySelector(".rain-sound-label").textContent = rainSoundOn
+    ? "Rain sound on"
+    : "Rain sound off";
 
-  if (soundOn) {
+  if (rainSoundOn) {
     audio = audio || new ComfortAudio();
     await audio.start();
-    audio.setRain(rainIntensity);
-    audio.fadeIn();
+    audio.setRainOn(true);
   } else if (audio) {
-    audio.fadeOut();
+    audio.setRainOn(false);
   }
+});
+
+lofiToggle.addEventListener("click", async () => {
+  lofiOn = !lofiOn;
+  lofiToggle.setAttribute("aria-pressed", String(lofiOn));
+  lofiToggle.querySelector(".lofi-label").textContent = lofiOn ? "Lofi on" : "Lofi off";
+
+  if (lofiOn) {
+    audio = audio || new ComfortAudio();
+    await audio.start();
+    syncLofiAudio();
+  } else if (audio) {
+    audio.setLofi(false, 0);
+  }
+});
+
+lofiVolumeSlider.addEventListener("input", () => {
+  lofiVolume = lofiVolumeSlider.value / 100;
+  syncLofiAudio();
 });
 
 window.addEventListener("resize", resize);
 mood = moodSelect.value;
+lofiVolume = lofiVolumeSlider.value / 100;
 applySceneMood(mood);
 resize();
 onRainChange();

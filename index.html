@@ -48,7 +48,7 @@
           <option value="dreamy">Dreamy night</option>
           <option value="bright">Bright morning</option>
         </select>
-        <span id="mood-hint" class="hint">Shifts warmth &amp; rain</span>
+        <span id="mood-hint" class="hint">Dreamy → 10pm, Bright → 10am</span>
       </div>
 
       <div class="control-group">
@@ -56,15 +56,25 @@
         <input type="range" id="rain-slider" min="0" max="100" value="65" />
       </div>
 
+      <div class="control-group">
+        <label for="lofi-volume">Lofi volume</label>
+        <input type="range" id="lofi-volume" min="0" max="100" value="70" />
+      </div>
+
+      <button type="button" id="lofi-toggle" class="sound-btn" aria-pressed="false">
+        <span class="sound-icon" aria-hidden="true">♪</span>
+        <span class="lofi-label">Lofi off</span>
+      </button>
+
+      <button type="button" id="rain-sound-toggle" class="sound-btn" aria-pressed="false">
+        <span class="sound-icon" aria-hidden="true">☂</span>
+        <span class="rain-sound-label">Rain sound off</span>
+      </button>
+
       <div class="control-group time-display">
         <span id="clock-label">Outside time</span>
         <time id="world-clock">—</time>
       </div>
-
-      <button type="button" id="sound-toggle" class="sound-btn" aria-pressed="false">
-        <span class="sound-icon" aria-hidden="true">♪</span>
-        <span class="sound-label">Sound off</span>
-      </button>
     </aside>
 
     <p class="footer-note">Leave this tab open. Breathe.</p>
