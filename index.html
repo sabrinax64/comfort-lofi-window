@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playwrite+GB+J+Guides:ital@0;1&display=swap" rel="stylesheet">
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Comfort Tab — Bedroom Window</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="room">
+    <header class="title-bar">
+      <h1>Comfort Tab</h1>
+      <p class="subtitle">A bedroom window when you need one</p>
+    </header>
+
+    <div class="window-unit" role="img" aria-label="Bedroom window looking outside">
+      <div class="frame frame-top"></div>
+      <div class="frame frame-left"></div>
+      <div class="frame frame-right"></div>
+      <div class="frame frame-bottom"></div>
+      <div class="mullion mullion-v"></div>
+      <div class="mullion mullion-h"></div>
+
+      <div class="glass-pane">
+        <img id="scene" class="layer scene" src="assets/window-scene.png" alt="" />
+        <div id="daynight-overlay" class="layer daynight" aria-hidden="true"></div>
+        <canvas id="rain" class="layer rain"></canvas>
+        <div class="glass-shine"></div>
+        <div class="condensation"></div>
+      </div>
+
+      <div class="sill">
+        <div class="sill-plant"></div>
+        <div class="sill-mug"></div>
+      </div>
+    </div>
+
+    <aside class="controls" aria-label="Window controls">
+      <div class="control-group">
+        <label for="mood">Mood</label>
+        <select id="mood" aria-describedby="mood-hint">
+          <option value="calm">Calm rain</option>
+          <option value="cozy">Cozy evening</option>
+          <option value="dreamy">Dreamy night</option>
+          <option value="bright">Bright morning</option>
+        </select>
+        <span id="mood-hint" class="hint">Shifts warmth &amp; rain</span>
+      </div>
+
+      <div class="control-group">
+        <label for="rain-slider">Rain</label>
+        <input type="range" id="rain-slider" min="0" max="100" value="65" />
+      </div>
+
+      <div class="control-group time-display">
+        <span id="clock-label">Outside time</span>
+        <time id="world-clock">—</time>
+      </div>
+
+      <button type="button" id="sound-toggle" class="sound-btn" aria-pressed="false">
+        <span class="sound-icon" aria-hidden="true">♪</span>
+        <span class="sound-label">Sound off</span>
+      </button>
+    </aside>
+
+    <p class="footer-note">Leave this tab open. Breathe.</p>
+  </div>
+
+  <audio id="ambient" loop preload="auto" src="assets/lofimusic.mp3"></audio>
+  <script src="app.js"></script>
+</body>
+</html>
